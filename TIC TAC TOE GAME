@@ -1,0 +1,312 @@
+import random
+import tkinter as tk
+from copy import deepcopy
+from functools import partial
+from tkinter import Button, Tk, messagebox, ttk
+from ttkthemes import ThemedTk
+
+# Function to start the game based on player mode
+def start_game1(player_mode):
+    print(f"Starting {player_mode} game")
+
+# Function to set up the initial window
+def window():
+    # Create the main window
+    root = tk.Tk()
+    root.title("Tic Tac Toe Setup")
+    root.configure(background="#ff0500")  # Set background color
+
+    # Set the window to full screen
+    root.attributes('-fullscreen', True)
+    root.bind('<Escape>', lambda event: root.attributes('-fullscreen', False))
+
+    # Create and configure labels with background color
+    label1 = ttk.Label(root, text="Enter Username 1:", font=("Helvetica", 30), background="#ff0500", foreground="white")
+    label1.grid(row=0, column=3, padx=10, pady=20, sticky=tk.W)
+
+    label2 = ttk.Label(root, text="Enter Username 2:", font=("Helvetica", 30), background="#ff0500", foreground="white")
+    label2.grid(row=1, column=3, padx=10, pady=20, sticky=tk.W)
+
+    label3 = ttk.Label(root, text="Choose 'X' or 'O':", font=("Helvetica", 30), background="#ff0500", foreground="white")
+    label3.grid(row=2, column=3, padx=10, pady=20, sticky=tk.W)
+
+    # Create and configure entry widgets with background color
+    entry1 = ttk.Entry(root, font=("Helvetica", 30), style="TEntry")
+    entry1.grid(row=0, column=4, padx=10, pady=10, sticky=tk.W)
+
+    entry2 = ttk.Entry(root, font=("Helvetica", 30), style="TEntry")
+    entry2.grid(row=1, column=4, padx=10, pady=10, sticky=tk.W)
+
+    # Create and configure combobox for symbol choice with background color
+    symbol_choices = ['X', 'O']
+    combo_var = tk.StringVar(value=symbol_choices[0])
+    combo = ttk.Combobox(root, textvariable=combo_var, values=symbol_choices, font=("Helvetica", 30), style="TCombobox")
+    combo.grid(row=2, column=4, padx=10, pady=10, sticky=tk.W)
+
+    # Create and configure play button with background color
+    style = ttk.Style()
+    style.configure("TButton", font=("Helvetica", 50), background="#2ecc71", foreground="white", width=15)
+    play_button = ttk.Button(root, text="Play", style="TButton", command=game)
+    play_button.grid(row=22, column=4, columnspan=2, pady=40)
+
+    # Configure entry and combobox styles for background color
+    style.configure("TEntry", background="#ecf0f1", foreground="black")
+    style.map("TEntry", fieldbackground=[("readonly", "#ecf0f1")])
+    style.configure("TCombobox", fieldbackground="#ecf0f1")
+
+    # Center align the labels
+    for child in root.winfo_children():
+        if isinstance(child, ttk.Label):
+            child.configure(anchor="center")
+
+    # Button to exit
+    B = ttk.Button(root, text='Back', command=root.destroy, width=10)
+    B.grid(row=23, column=1, padx=20, pady=20)
+
+# Function to handle play button click
+def play_button_clicked():
+    selected_mode = var.get()
+    if selected_mode == 1:
+        start_game1("PvP")
+        window()
+    elif selected_mode == 2:
+        start_game1("AI")
+        ai_code()
+
+# Function to implement the game logic
+def game():
+    # Sub-function to create the game board
+    def create_board():
+        board = [[0, 0, 0], [0, 0, 0], [0, 0, 0]]
+        current_player = 1
+
+        # Sub-function to handle player clicks
+        def handle_click(row, col):
+            nonlocal current_player
+
+            if board[row][col] == 0:
+                if current_player == 1:
+                    board[row][col] = "X"
+                    current_player = 2
+                else:
+                    board[row][col] = "O"
+                    current_player = 1
+
+                button = window.grid_slaves(row=row, column=col)[0]
+                button.config(text=board[row][col])
+
+                check_for_winner()
+
+        # Sub-function to check for a winner or a tie
+        def check_for_winner():
+            winner = None
+
+            for row in board:
+                if row.count(row[0]) == len(row) and row[0] != 0:
+                    winner = row[0]
+                    break
+
+            for col in range(len(board)):
+                if board[0][col] == board[1][col] == board[2][col] and board[0][col] != 0:
+                    winner = board[0][col]
+                    break
+
+            if board[0][0] == board[1][1] == board[2][2] and board[0][0] != 0:
+                winner = board[0][0]
+            elif board[0][2] == board[1][1] == board[2][0] and board[0][2] != 0:
+                winner = board[0][2]
+
+            if all(all(row) for row in board) and winner is None:
+                winner = "tie"
+
+            if winner:
+                declare_winner(winner)
+
+        # Sub-function to declare the winner and restart the game
+        def declare_winner(winner):
+            if winner == "tie":
+                message = "It's a tie!"
+            else:
+                message = f"Player {winner} wins!"
+
+            answer = messagebox.askyesno("Game Over", message + " Do you want to restart the game?")
+
+            if answer:
+                for i in range(3):
+                    for j in range(3):
+                        button = window.grid_slaves(row=i, column=j)[0]
+                        button.config(text="")
+                        board[i][j] = 0
+
+                create_board()
+            else:
+                window.quit()
+
+        # Create buttons for the game board
+        for i in range(3):
+            for j in range(3):
+                button = tk.Button(window, text="", font=("Arial", 50), height=2, width=6, bg="#ff0500", command=lambda row=i, col=j: handle_click(row, col))
+                button.grid(row=i, column=j, sticky="nsew")
+
+    # Sub-function to start the game
+    def start_game():
+        global window
+        window = tk.Tk()
+        window.title("Tic Tac Toe")
+        create_board()
+        window.mainloop()
+
+    # Start the game
+    start_game()
+
+# Function to implement AI gameplay
+def ai_code():
+    board = [[' ']*3 for _ in range(3)]
+    sign = 0
+
+    # Sub-function to check for a winner
+    def winner(b, l):
+        for i in range(3):
+            if (b[i][0] == b[i][1] == b[i][2] == l) or (b[0][i] == b[1][i] == b[2][i] == l):
+                return True
+
+        if (b[0][0] == b[1][1] == b[2][2] == l) or (b[0][2] == b[1][1] == b[2][0] == l):
+            return True
+
+        return False
+
+    # Sub-function to check if the board is full
+    def isfull(b):
+        for i in range(3):
+            for j in range(3):
+                if b[i][j] == ' ':
+                    return False
+        return True
+
+    # Sub-function to determine the AI's move
+    def pc(board):
+        possiblemove = []
+        for i in range(len(board)):
+            for j in range(len(board[i])):
+                if board[i][j] == ' ':
+                    possiblemove.append([i, j])
+        move = []
+        if possiblemove == []:
+            return
+        else:
+            for let in ['O', 'X']:
+                for i in possiblemove:
+                    boardcopy = deepcopy(board)
+                    boardcopy[i[0]][i[1]] = let
+                    if winner(boardcopy, let):
+                        return i
+            corner = [i for i in possiblemove if i in [[0, 0], [0, 2], [2, 0], [2, 2]]]
+            if len(corner) > 0:
+                move = random.choice(corner)
+                return move
+            edge = [i for i in possiblemove if i in [[0, 1], [1, 0], [1, 2], [2, 1]]]
+            if len(edge) > 0:
+                move = random.choice(edge)
+                return move
+
+    # Sub-function to get the text for the AI's move
+    def get_text_pc(i, j, gb, l1, l2, board, sign, button):
+        if board[i][j] == ' ':
+            if sign % 2 == 0:
+                l1.config(state="disabled")
+                l2.config(state="active")
+                board[i][j] = "X"
+            else:
+                button[i][j].config(state="active")
+                l2.config(state="disabled")
+                l1.config(state="active")
+                board[i][j] = "O"
+            sign += 1
+            button[i][j].config(text=board[i][j])
+        x = True
+        if winner(board, "X"):
+            gb.destroy()
+            x = False
+            box = messagebox.showinfo("Winner", "Player won the match")
+        elif winner(board, "O"):
+            gb.destroy()
+            x = False
+            box = messagebox.showinfo("Winner", "Computer won the match")
+        elif isfull(board):
+            gb.destroy()
+            x = False
+            box = messagebox.showinfo("Tie Game", "Tie Game")
+        if x and sign % 2 != 0:
+            move = pc(board)
+            button[move[0]][move[1]].config(state="disabled")
+            get_text_pc(move[0], move[1], gb, l1, l2, board, sign, button)
+
+    # Sub-function to create the game board for AI gameplay
+    def gameboard_pc(game_board, l1, l2):
+        button = []
+        for i in range(3):
+            m = 3+i
+            button.append(i)
+            button[i] = []
+            for j in range(3):
+                n = j
+                button[i].append(j)
+                get_t = partial(get_text_pc, i, j, game_board, l1, l2, board, sign, button)
+                button[i][j] = Button(game_board, bd=5, command=get_t, height=4, width=8)
+                button[i][j].grid(row=m, column=n)
+
+    # Sub-function to start the game with AI
+    def withpc(game_board):
+        game_board.destroy()
+        game_board = Tk()
+        game_board.title("Tic Tac Toe")
+        l1 = Button(game_board, text="Player : X", width=10)
+        l1.grid(row=1, column=1)
+        l2 = Button(game_board, text="Computer : O", width=10, state="disabled")
+        l2.grid(row=2, column=1)
+        gameboard_pc(game_board, l1, l2)
+
+    # Sub-function to create the initial game board
+    def create_board():
+        game_board = Tk()
+        game_board.title("Tic Tac Toe")
+        l1 = Button(game_board, text="Player : X", width=10)
+        l1.grid(row=1, column=1)
+        l2 = Button(game_board, text="Computer : O", width=10, state="disabled")
+        l2.grid(row=2, column=1)
+        gameboard_pc(game_board, l1, l2)
+
+    # Start the game with AI
+    create_board()
+
+# Create the themed Tkinter window
+root = ThemedTk(theme="plastik")
+root.title("Tic Tac Toe")
+
+# Configure window size and position
+screen_width = root.winfo_screenwidth()
+screen_height = root.winfo_screenheight()
+root.geometry(f"{screen_width}x{screen_height}+0+0")
+
+# Set background color
+root.configure(background="#ff0500")  # Light gray background color
+
+# Create and configure a label
+label = ttk.Label(root, text="Tic Tac Toe", font=("Helvetica", 70), background="#f0f0f0")
+label.pack(pady=20)
+
+# Create a variable to store the selected mode
+var = tk.IntVar()
+
+# Create and configure radio buttons for player modes
+style = ttk.Style()
+style.configure("TRadiobutton", font=("Helvetica", 40), background="#ff0500", foreground="white")
+
+pvp_radio = ttk.Radiobutton(root, text="PvP", variable=var, value=1, command=play_button_clicked)
+pvp_radio.pack(pady=10)
+
+ai_radio = ttk.Radiobutton(root, text="AI", variable=var, value=2, command=play_button_clicked)
+ai_radio.pack(pady=10)
+
+# Run the Tkinter main loop
+root.mainloop()
